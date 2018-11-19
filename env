@@ -1,0 +1,24 @@
+###  The values configured here are applied during
+###  $ docker-compose up
+LOCALUSER=andrew
+HOSTNAME=docker5
+IP_ADDRESS=192.168.0.75
+PUID=1000
+PGID=1000
+PWD=/home/andrew/mediabox
+DLDIR=/home/andrew/mediabox/content
+TVDIR=/home/andrew/mediabox/content/tv
+MOVIEDIR=/home/andrew/mediabox/content/movies
+MUSICDIR=/home/andrew/mediabox/content/music
+PIAUNAME=<uname>
+PIAPASS=<pword>
+CIDR_ADDRESS=192.168.0.0/24
+TZ=America/Toronto
+PMSTAG=public
+PMSTOKEN=
+PORTAINERSTYLE=auth
+VPN_REMOTE=ca-toronto.privateinternetaccess.com
+CPDAEMONUN=deluge
+CPDAEMONPASS=eguled
+NZBGETUN=deluge
+NZBGETPASS=eguled

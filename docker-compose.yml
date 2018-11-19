@@ -1,0 +1,229 @@
+# mymediabox
+# media apps
+# no public domain names ie no proxy
+#
+# Have docker-compose.yml and .env in the same directory to launch the stack
+
+- fix this - 
+- create an APPHOME env variable?
+- eg volumes:
+            - '$(APPHOME)/plex/config:/config'
+          
+        
+
+version: '3.5'
+
+services:
+
+    # ----------------------------------------
+    # DELUGEVPN
+    # ----------------------------------------
+    arch-delugevpn:
+        image: binhex/arch-delugevpn
+        container_name: delugevpn
+        restart: unless-stopped
+        network_mode: "bridge"
+        ports:
+            - '${IP_ADDRESS}:8112:8112'
+            - '${IP_ADDRESS}:8118:8118'
+            - '${IP_ADDRESS}:58846:58846'
+            - '${IP_ADDRESS}:58946:58946'
+        cap_add:
+            - NET_ADMIN
+        environment:
+            - VPN_ENABLED=yes
+            - VPN_USER=${PIAUNAME}
+            - VPN_PASS=${PIAPASS}
+            - VPN_REMOTE=${VPN_REMOTE}
+            - VPN_PORT=1198
+            - VPN_PROTOCOL=udp
+            - VPN_DEVICE_TYPE=tun
+            - VPN_PROV=pia
+            - STRONG_CERTS=no
+            - ENABLE_PRIVOXY=yes
+            - STRICT_PORT_FORWARD=yes
+            - LAN_NETWORK=${CIDR_ADDRESS}
+            - NAME_SERVERS=209.222.18.222,37.235.1.174,8.8.8.8,209.222.18.218,37.235.1.177,8.8.4.4
+            - DEBUG=false
+            - PUID=${PUID}
+            - PGID=${PGID}
+        volumes:
+            - '${DLDIR}:/data'
+            - './delugevpn/config:/config'
+            - '/etc/localtime:/etc/localtime:ro'
+
+    # ----------------------------------------
+    # arch-sabnzbdvpn
+    # ----------------------------------------
+- fix this -
+- switch out for linuxserver sab or nzbget?
+
+    arch-sabnzbdvpn:
+        network_mode: "bridge"
+        cap_add:
+            - NET_ADMIN
+        ports:
+            - '7080:8080'
+            - '7090:8090'
+            - '8119:8118'
+        container_name: arch-sabnzbvpn
+        image: binhex/arch-sabnzbdvpn
+        restart: unless-stopped
+        environment:
+            - VPN_ENABLED=yes
+            - VPN_USER=${PIAUNAME}
+            - VPN_PASS=${PIAPASS}
+            - VPN_REMOTE=${VPN_REMOTE}
+            - VPN_PORT=1198
+            - VPN_PROTOCOL=udp
+            - VPN_DEVICE_TYPE=tun
+            - VPN_PROV=pia
+            - STRONG_CERTS=no
+            - ENABLE_PRIVOXY=yes
+            - STRICT_PORT_FORWARD=yes
+            - LAN_NETWORK=${CIDR_ADDRESS}
+            - NAME_SERVERS=209.222.18.222,37.235.1.174,8.8.8.8,209.222.18.218,37.235.1.177,8.8.4.4
+            - DEBUG=false
+            - PUID=${PUID}
+            - PGID=${PGID}
+        volumes:
+- fix this -
+            - '/vantec/media/holding:/data'
+            - '${DLDIR}:/data'
+            - '/home/andrew/arch-sabnzbdvpn/config:/config'
+            - '/etc/localtime:/etc/localtime:ro'
+            - '/etc/localtime:/etc/localtime:ro'
+
+
+
+    # ----------------------------------------
+    # NETDATA
+    # ----------------------------------------
+    netdata:
+        image: titpetric/netdata
+        container_name: netdata
+        restart: unless-stopped
+        network_mode: "bridge"
+        ports:
+            - '${IP_ADDRESS}:19999:19999'
+        cap_add:
+            - SYS_PTRACE
+        volumes:
+            - '/proc:/host/proc:ro'
+            - '/sys:/host/sys:ro'
+            - '/var/run/docker.sock:/var/run/docker.sock'
+
+    # ----------------------------------------
+    # PLEX
+    # ----------------------------------------
+    plex:
+        container_name: plex
+        image: plexinc/pms-docker:${PMSTAG}
+        restart: unless-stopped
+        network_mode: "host"
+
+- fix this -
+- do I need all these ports if netowkr mode is host?
+
+        ports:
+            - '${IP_ADDRESS}:32400:32400/tcp'
+            - '${IP_ADDRESS}:3005:3005/tcp'
+            - '${IP_ADDRESS}:8324:8324/tcp'
+            - '${IP_ADDRESS}:32469:32469/tcp'
+            - '${IP_ADDRESS}:1900:1900/udp'
+            - '${IP_ADDRESS}:32410:32410/udp'
+            - '${IP_ADDRESS}:32412:32412/udp'
+            - '${IP_ADDRESS}:32413:32413/udp'
+            - '${IP_ADDRESS}:32414:32414/udp'
+        environment:
+- fix this - 
+- calm token?
+- Plex port is not 32400
+            - PLEX_CLAIM=${PMSTOKEN}
+            - ADVERTISE_IP=http://${IP_ADDRESS}:32400/
+            - ALLOWED_NETWORKS=${CIDR_ADDRESS}
+            - PLEX_UID=${PUID}
+            - PLEX_GID=${PGID}
+        hostname: ${HOSTNAME}
+        volumes:
+            - './plex:/config'
+            - './plex/transcode:/transcode'
+            - '${TVDIR}:/data/tvshows'
+            - '${MOVIEDIR}:/data/movies'
+            - '${MUSICDIR}:/data/music'
+            - '/etc/localtime:/etc/localtime:ro'
+
+    # ----------------------------------------
+    # PORTAINER
+    # ----------------------------------------
+    portainer:
+        image: portainer/portainer:latest
+        container_name: portainer
+        restart: unless-stopped
+        network_mode: "bridge"
+        ports:
+            - '${IP_ADDRESS}:9000:9000'
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+        volumes:
+            - './portainer:/data'
+            - '/var/run/docker.sock:/var/run/docker.sock'
+            - '/etc/localtime:/etc/localtime:ro'
+        command: ${PORTAINERSTYLE} -H unix:///var/run/docker.sock
+
+    # ----------------------------------------
+    # SONARR
+    # ----------------------------------------
+    sonarr:
+        image: linuxserver/sonarr
+        container_name: sonarr
+        restart: unless-stopped
+        network_mode: "bridge"
+        ports:
+            - '${IP_ADDRESS}:8989:8989'
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - TZ=${TZ}
+        volumes:
+            - './sonarr:/config'
+            - '${DLDIR}/completed:/data/completed'
+            - '${TVDIR}:/tv'
+            - '/etc/localtime:/etc/localtime:ro'
+
+    # ----------------------------------------
+    # TAUTULLI
+    # ----------------------------------------
+    tautulli:
+        image: tautulli/tautulli
+        container_name: tautulli
+        restart: unless-stopped
+        network_mode: "bridge"
+        ports:
+            - '${IP_ADDRESS}:8181:8181'
+        environment:
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - TZ=${TZ}
+        volumes:
+            - './tautulli:/config'
+            - './plex/Library/Application Support/Plex Media Server/Logs:/logs:ro'
+        depends_on:
+            - plex
+
+    # ----------------------------------------
+    # WATCHTOWER
+    # ----------------------------------------
+    watchtower:
+        image: v2tec/watchtower
+        container_name: watchtower
+        restart: unless-stopped
+        environment:
+            - TZ=${TZ}
+        network_mode: "bridge"
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock'
+        command: --schedule @midnight --cleanup
+
+        
